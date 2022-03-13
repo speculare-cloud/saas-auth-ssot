@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 sproot = { git = "https://github.com/speculare-cloud/sproot" }
 actix-cors = { version = "0.6" }
-actix-session = { version = "0.5", optional = true }
+actix-session = "0.5"
 actix-web = { version = "4.0", features = ["rustls"] }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "3.1", features = ["derive"] }

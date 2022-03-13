@@ -12,6 +12,7 @@ use clap_verbosity_flag::WarnLevel;
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use jsonwebtoken::{DecodingKey, EncodingKey};
 
+mod api;
 mod flow_run;
 mod routes;
 mod server;
