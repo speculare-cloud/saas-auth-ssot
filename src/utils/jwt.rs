@@ -15,7 +15,6 @@ pub fn create_jwt(customer_id: &str) -> Result<String, AppError> {
     let expiration = match Utc::now().checked_add_signed(chrono::Duration::minutes(5)) {
         Some(time) => time.timestamp(),
         None => {
-            error!("Cannot build expiration time.");
             return Err(AppError {
                 message: Some("Cannot build expiration time.".into()),
                 cause: None,
@@ -41,10 +40,9 @@ pub fn decode_jwt(jwt: &str) -> Result<String, AppError> {
     {
         Ok(decoded) => decoded,
         Err(e) => {
-            error!("Error while decoding a JWT: {}", e);
             return Err(AppError {
                 message: None,
-                cause: None,
+                cause: Some(format!("Decode error: {:?}", e.kind())),
                 error_type: AppErrorType::InvalidToken,
             });
         }

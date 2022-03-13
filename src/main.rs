@@ -69,7 +69,13 @@ async fn main() -> std::io::Result<()> {
             &sproot::prog().map_or_else(|| "speculare_server".to_owned(), |f| f.replace('-', "_")),
             args.verbose.log_level_filter(),
         )
+        .filter_module("actix_web", args.verbose.log_level_filter())
         .init();
+
+    let jwt = utils::jwt::create_jwt("customer_id");
+    info!("Plain JWT {:?}", jwt);
+    let base64_jwt = base64::encode(jwt.unwrap());
+    info!("base64 JWT {:?}", base64_jwt);
 
     flow_run::flow_run_start().await
 }

@@ -12,8 +12,8 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
         .service(
             web::scope("/api")
                 .wrap(CookieSession::signed(CONFIG.cookie_secret.as_bytes()).name("SP-CKS"))
-                .route("/login", web::post().to(api::login::handle_login))
-                .route("/register", web::post().to(api::register::handle_register))
-                .route("/callback", web::get().to(api::callback::handle_callback)),
+                .route("/sso", web::post().to(api::sso::handle_sso))
+                .route("/rsso", web::post().to(api::sso::handle_rsso))
+                .route("/csso", web::get().to(api::sso::handle_csso)),
         );
 }
