@@ -25,6 +25,10 @@ pub struct Config {
 
     pub cookie_secret: String,
     pub cookie_domain: String,
+
+    // AUTH SETTINGS
+    pub jwt_ec_priv: String,
+    pub jwt_ec_pub: String,
 }
 
 impl Config {

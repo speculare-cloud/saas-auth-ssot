@@ -2,14 +2,15 @@
 extern crate diesel_migrations;
 #[macro_use]
 extern crate log;
-
-use std::{ffi::OsStr, path::Path};
+#[macro_use]
+extern crate sproot;
 
 use crate::utils::config::Config;
 
 use clap::Parser;
 use clap_verbosity_flag::WarnLevel;
 use diesel::{r2d2::ConnectionManager, PgConnection};
+use jsonwebtoken::{DecodingKey, EncodingKey};
 
 mod flow_run;
 mod routes;
@@ -19,23 +20,6 @@ mod utils;
 // Helper types for less boilerplate code
 pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 pub type ConnType = r2d2::PooledConnection<ConnectionManager<PgConnection>>;
-
-/// Evaluate an Enum into the value it hold
-#[macro_export]
-macro_rules! field_isset {
-    ($value:expr, $name:literal) => {
-        match $value {
-            Some(x) => x,
-            None => {
-                error!(
-                    "Config: optional field {} is not defined but is needed.",
-                    $name
-                );
-                std::process::exit(1);
-            }
-        }
-    };
-}
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -57,20 +41,22 @@ lazy_static::lazy_static! {
             std::process::exit(1);
         }
     };
+
+    static ref JWT_ENCODINGKEY: EncodingKey = {
+        let content = std::fs::read(&CONFIG.jwt_ec_priv).unwrap();
+        let secret = String::from_utf8_lossy(&content);
+        EncodingKey::from_ec_pem(secret.as_bytes()).unwrap()
+    };
+
+    static ref JWT_DECODINGKEY: DecodingKey = {
+        let content = std::fs::read(&CONFIG.jwt_ec_pub).unwrap();
+        let secret = String::from_utf8_lossy(&content);
+        DecodingKey::from_ec_pem(secret.as_bytes()).unwrap()
+    };
 }
 
 // Embed migrations into the binary
 embed_migrations!();
-
-fn prog() -> Option<String> {
-    std::env::args()
-        .next()
-        .as_ref()
-        .map(Path::new)
-        .and_then(Path::file_name)
-        .and_then(OsStr::to_str)
-        .map(String::from)
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -79,7 +65,7 @@ async fn main() -> std::io::Result<()> {
     // Init logger
     env_logger::Builder::new()
         .filter_module(
-            &prog().map_or_else(|| "speculare_server".to_owned(), |f| f.replace('-', "_")),
+            &sproot::prog().map_or_else(|| "speculare_server".to_owned(), |f| f.replace('-', "_")),
             args.verbose.log_level_filter(),
         )
         .init();

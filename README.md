@@ -19,6 +19,25 @@ The goal of `saas-auth-ssot` is to have a service (API + database) that other Sp
 - Overall authorization/authentication across the service
 
 
+Generating JWT EC Keys
+--------------------------
+
+```bash
+$ openssl ecparam -genkey -noout -name prime256v1 | openssl pkcs8 -topk8 -nocrypt -out ec-private.pem
+
+$ openssl ec -in ec-private.pem -pubout -out ec-public.pem
+```
+
+How does JWT Signing works
+--------------------------
+
+```rust
+let jwt = utils::jwt::create_jwt("customer_id");
+info!("{:?}", jwt);
+let original = utils::jwt::decode_jwt(&jwt.unwrap());
+info!("{:?}", original);
+```
+
 Contributing
 --------------------------
 
