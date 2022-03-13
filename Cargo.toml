@@ -1,0 +1,27 @@
+[package]
+name = "saas-auth-ssot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-cors = { version = "0.6" }
+actix-session = { version = "0.5", optional = true }
+actix-web = { version = "4.0", features = ["rustls"] }
+clap = { version = "3.1", features = ["derive"] }
+clap-verbosity-flag = "1.0"
+config = "0.12"
+diesel = { version = "1.4", features = ["postgres", "r2d2"] }
+diesel_migrations = "1.4"
+env_logger = "0.9"
+lazy_static = "1.4"
+log = "0.4"
+r2d2 = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+sys_metrics = { git = "https://github.com/Martichou/sys_metrics" }
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
