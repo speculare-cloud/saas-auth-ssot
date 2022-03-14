@@ -16,6 +16,14 @@ pub async fn handle_sso(
     info!("Route POST /api/sso");
 
     let email = wemail.into_inner().email;
+    // Get the customer_id from the email
+
+    // Create the JWT token
+    let jwt = jwt::create_jwt("customer_id")?;
+
+    // Send the mail for the JWT token
+    // at first, send it immediately, but then we can consider
+    // creating a Queue for the mails to be sent (avoid limit, ...)
 
     Ok(HttpResponse::Ok().finish())
 }
@@ -28,6 +36,14 @@ pub async fn handle_rsso(
     info!("Route POST /api/rsso");
 
     let email = wemail.into_inner().email;
+    // Create the user and generate a customer_id
+
+    // Create the JWT token
+    let jwt = jwt::create_jwt("customer_id")?;
+
+    // Send the mail for the JWT token
+    // at first, send it immediately, but then we can consider
+    // creating a Queue for the mails to be sent (avoid limit, ...)
 
     Ok(HttpResponse::Ok().finish())
 }
