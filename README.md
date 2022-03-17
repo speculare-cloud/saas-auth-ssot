@@ -28,16 +28,6 @@ $ openssl ecparam -genkey -noout -name prime256v1 | openssl pkcs8 -topk8 -nocryp
 $ openssl ec -in ec-private.pem -pubout -out ec-public.pem
 ```
 
-Small testing
---------------------------
-
-```rust
-let jwt = utils::jwt::create_jwt("customer_id");
-info!("Plain JWT {:?}", jwt);
-let base64_jwt = base64::encode(jwt.unwrap());
-info!("base64 JWT {:?}", base64_jwt);
-```
-
 Contributing
 --------------------------
 
