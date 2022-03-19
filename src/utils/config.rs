@@ -2,7 +2,8 @@ use crate::Args;
 
 use clap::Parser;
 use config::ConfigError;
-use serde::Deserialize;
+use lettre::message::Mailbox;
+use serde::{de, Deserialize, Deserializer};
 
 #[derive(Debug, Deserialize, Clone)]
 
@@ -27,8 +28,20 @@ pub struct Config {
     pub cookie_domain: String,
 
     // AUTH SETTINGS
+    pub sso_base_url: String,
     pub jwt_ec_priv: String,
     pub jwt_ec_pub: String,
+
+    // SMTP SETTINGS
+    #[serde(default = "default_smtp_port")]
+    pub smtp_port: u16,
+    #[serde(default = "default_smtp_tls")]
+    pub smtp_tls: bool,
+    pub smtp_host: String,
+    pub smtp_user: String,
+    pub smtp_password: String,
+    #[serde(deserialize_with = "mailbox_deser")]
+    pub smtp_email_sender: Mailbox,
 }
 
 impl Config {
@@ -65,4 +78,27 @@ fn default_workers() -> usize {
             4
         }
     }
+}
+
+fn default_smtp_port() -> u16 {
+    587
+}
+
+fn default_smtp_tls() -> bool {
+    true
+}
+
+fn mailbox_deser<'de, D>(data: D) -> Result<Mailbox, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: String = de::Deserialize::deserialize(data)?;
+    match s.parse() {
+        Ok(res) => Ok(res),
+        Err(e) => Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Mailbox error for \"{}\": {}", s, e),
+        )),
+    }
+    .map_err(de::Error::custom)
 }

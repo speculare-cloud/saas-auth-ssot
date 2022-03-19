@@ -2,3 +2,4 @@
 Cargo.lock
 ssot.config
 *.pem
+xschema.rs

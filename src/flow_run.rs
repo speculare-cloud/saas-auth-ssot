@@ -1,8 +1,11 @@
-use crate::{embedded_migrations, server, Pool, CONFIG};
+use crate::{embedded_migrations, server, utils::mail_sso::test_smtp_transport, Pool, CONFIG};
 
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
 
 fn build_pool(db_url: &str, max_conn: u32) -> Pool {
+    // Check if the SMTP server host is "ok"
+    test_smtp_transport();
+
     // Init the connection to the postgresql
     let manager = ConnectionManager::<PgConnection>::new(db_url);
     // This step might spam for error CONFIG.database_max_connection of times, this is normal.

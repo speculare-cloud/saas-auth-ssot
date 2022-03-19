@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 sproot = { git = "https://github.com/speculare-cloud/sproot" }
+askama = "0.11"
 actix-cors = { version = "0.6" }
 actix-session = "0.5"
 actix-web = { version = "4.0", features = ["rustls"] }
@@ -20,10 +21,12 @@ diesel_migrations = "1.4"
 env_logger = "0.9"
 jsonwebtoken = "8.0"
 lazy_static = "1.4"
+lettre = { version = "0.10.0-rc.4", features = ["rustls-tls"] }
 log = "0.4"
 r2d2 = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 sys_metrics = { git = "https://github.com/Martichou/sys_metrics" }
+uuid = { version = "0.8" }
 
 [profile.release]
 lto = true
