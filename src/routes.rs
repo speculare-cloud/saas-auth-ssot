@@ -19,6 +19,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
         // Bind the /api/* route
         .service(
             web::scope("/api")
+                .route("/key", web::patch().to(api::apikey::update_apikey))
                 .wrap(cookie_session)
                 .route("/sso", web::post().to(api::sso::handle_sso))
                 .route("/rsso", web::post().to(api::sso::handle_rsso))

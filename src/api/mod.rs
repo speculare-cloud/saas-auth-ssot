@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+pub mod apikey;
 pub mod sso;
 
 #[derive(Debug, Serialize, Deserialize)]
