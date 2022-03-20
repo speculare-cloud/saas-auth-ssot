@@ -13,6 +13,19 @@ use sproot::{
 };
 use uuid::Uuid;
 
+fn exit_if_logged(session: &Session) -> Result<(), AppError> {
+    // Check if the user is already "logged" (don't override a user_id)
+    if let Some(user_id) = session.get::<String>("user_id")? {
+        return Err(AppError {
+            message: Some(format!("You're already logged as {}", user_id)),
+            cause: None,
+            error_type: AppErrorType::InvalidRequest,
+        });
+    }
+
+    Ok(())
+}
+
 fn extract_email(wemail: EmailSso) -> Result<(String, Mailbox), AppError> {
     // This act as a email verification (Regex is used)
     let mailboxed: Mailbox = match wemail.email.parse() {
@@ -33,9 +46,12 @@ fn extract_email(wemail: EmailSso) -> Result<(String, Mailbox), AppError> {
 /// POST /api/sso (login)
 pub async fn handle_sso(
     db: web::Data<Pool>,
+    session: Session,
     wemail: web::Json<EmailSso>,
 ) -> Result<HttpResponse, AppError> {
     info!("Route POST /api/sso");
+
+    exit_if_logged(&session)?;
 
     web::block(move || {
         let (email, mailboxed) = extract_email(wemail.into_inner())?;
@@ -58,9 +74,12 @@ pub async fn handle_sso(
 /// POST /api/rsso (register)
 pub async fn handle_rsso(
     db: web::Data<Pool>,
+    session: Session,
     wemail: web::Json<EmailSso>,
 ) -> Result<HttpResponse, AppError> {
     info!("Route POST /api/rsso");
+
+    exit_if_logged(&session)?;
 
     web::block(move || {
         let (email, mailboxed) = extract_email(wemail.into_inner())?;
@@ -89,14 +108,7 @@ pub async fn handle_csso(
 ) -> Result<HttpResponse, AppError> {
     info!("Route GET /api/csso");
 
-    // Check if the user is already "logged" (don't override a user_id)
-    if let Some(user_id) = session.get::<String>("user_id")? {
-        return Err(AppError {
-            message: Some(format!("You're already logged as {}", user_id)),
-            cause: None,
-            error_type: AppErrorType::InvalidRequest,
-        });
-    }
+    exit_if_logged(&session)?;
 
     let customer_id = web::block(move || {
         // Get the customer_id from the jwt token
