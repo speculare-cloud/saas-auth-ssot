@@ -42,8 +42,7 @@ pub async fn update_apikey(
             Ok(())
         } else {
             Err(AppError {
-                message: None,
-                cause: None,
+                message: "Invalid JWT token, access denied".to_owned(),
                 error_type: AppErrorType::InvalidToken,
             })
         }

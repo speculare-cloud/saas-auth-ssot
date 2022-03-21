@@ -16,8 +16,7 @@ pub fn create_jwt(customer_id: &str) -> Result<String, AppError> {
         Some(time) => time.timestamp(),
         None => {
             return Err(AppError {
-                message: Some("Cannot build expiration time.".into()),
-                cause: None,
+                message: "Cannot build expiration time".to_owned(),
                 error_type: AppErrorType::ServerError,
             });
         }
@@ -36,17 +35,7 @@ pub fn create_jwt(customer_id: &str) -> Result<String, AppError> {
 }
 
 pub fn decode_jwt(jwt: &str) -> Result<String, AppError> {
-    let decoded = match decode::<Claims>(jwt, &JWT_DECODINGKEY, &Validation::new(Algorithm::ES256))
-    {
-        Ok(decoded) => decoded,
-        Err(e) => {
-            return Err(AppError {
-                message: None,
-                cause: Some(format!("Decode error: {:?}", e.kind())),
-                error_type: AppErrorType::InvalidToken,
-            });
-        }
-    };
+    let decoded = decode::<Claims>(jwt, &JWT_DECODINGKEY, &Validation::new(Algorithm::ES256))?;
 
     Ok(decoded.claims.sub)
 }

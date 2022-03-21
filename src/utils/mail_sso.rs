@@ -92,8 +92,7 @@ fn send_mail(email_addr: Mailbox, template: String, jwt: &str) -> Result<(), App
         Err(e) => {
             error!("Could not send email: {}", e);
             Err(AppError {
-                message: Some("Cannot send the verification email.".into()),
-                cause: Some(format!("{}", e)),
+                message: format!("Error while sending verification email: {}", e),
                 error_type: AppErrorType::ServerError,
             })
         }

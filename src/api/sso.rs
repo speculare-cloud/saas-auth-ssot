@@ -17,8 +17,7 @@ fn exit_if_logged(session: &Session) -> Result<(), AppError> {
     // Check if the user is already "logged" (don't override a user_id)
     if let Some(user_id) = session.get::<String>("user_id")? {
         return Err(AppError {
-            message: Some(format!("You're already logged as {}", user_id)),
-            cause: None,
+            message: format!("You're already logged as {}", user_id),
             error_type: AppErrorType::InvalidRequest,
         });
     }
@@ -33,8 +32,7 @@ fn extract_email(wemail: EmailSso) -> Result<(String, Mailbox), AppError> {
         Err(e) => {
             error!("Cannot convert {} into a Mailbox: {}", wemail.email, e);
             return Err(AppError {
-                message: Some("Wrongly typed email address".into()),
-                cause: Some(format!("{}", e)),
+                message: "Bad email address".to_owned(),
                 error_type: AppErrorType::InvalidRequest,
             });
         }
@@ -114,10 +112,9 @@ pub async fn handle_csso(
         // Get the customer_id from the jwt token
         let customer_id = match base64::decode(&jwt_holder.jwt) {
             Ok(decoded) => jwt::decode_jwt(std::str::from_utf8(&decoded).unwrap())?,
-            Err(e) => {
+            Err(_) => {
                 return Err(AppError {
-                    message: Some("Cannot decode your base64 encoded JWT".into()),
-                    cause: Some(format!("DecodeError: {:?}", e)),
+                    message: "Invalid JWT token, access denied".to_string(),
                     error_type: AppErrorType::InvalidRequest,
                 });
             }
@@ -126,8 +123,7 @@ pub async fn handle_csso(
         // Check if the customer_id exists in the database
         if !Customers::exists(&db.get()?, &Uuid::parse_str(&customer_id)?)? {
             return Err(AppError {
-                message: Some("Bad user_id, not authorized".into()),
-                cause: None,
+                message: "Bad id, not authorized".to_owned(),
                 error_type: AppErrorType::InvalidToken,
             });
         }
