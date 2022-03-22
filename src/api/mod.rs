@@ -12,3 +12,8 @@ pub struct EmailSso {
 pub struct JwtToken {
     pub jwt: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Specific {
+    pub uuid: String,
+}

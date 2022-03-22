@@ -1,5 +1,7 @@
 use crate::Pool;
 
+use super::Specific;
+
 use actix_web::{web, HttpRequest, HttpResponse};
 use sproot::{
     errors::{AppError, AppErrorType},
@@ -10,18 +12,13 @@ use sproot::{
 pub async fn update_apikey(
     request: HttpRequest,
     db: web::Data<Pool>,
+    info: web::Query<Specific>,
 ) -> Result<HttpResponse, AppError> {
     info!("Route PATCH /api/key");
 
-    // Get the SPTK header and the SP-UUID, error if not found (400)
+    // Get the SPTK header, error if not found (400)
     let sptk = match request.headers().get("SPTK") {
         Some(sptk) => sptk.to_owned(),
-        None => {
-            return Ok(HttpResponse::BadRequest().finish());
-        }
-    };
-    let host_uuid = match request.headers().get("SP-UUID") {
-        Some(host_uuid) => host_uuid.to_owned(),
         None => {
             return Ok(HttpResponse::BadRequest().finish());
         }
@@ -35,7 +32,7 @@ pub async fn update_apikey(
         // Otherwise it's an error as it's not authorized
         if api_key.host_uuid.is_none() {
             ApiKeyDTOUpdate {
-                host_uuid: Some(host_uuid.to_str().unwrap().to_owned()),
+                host_uuid: Some(info.uuid.to_owned()),
                 ..Default::default()
             }
             .update(&db.get()?, api_key.id)?;
