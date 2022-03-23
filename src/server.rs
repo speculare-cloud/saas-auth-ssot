@@ -2,7 +2,7 @@ use crate::{routes, Pool, CONFIG};
 
 use actix_cors::Cors;
 use actix_web::{middleware, App, HttpServer};
-use sproot::errors::AppError;
+use sproot::{errors::AppError, models::AuthPool};
 
 /// Construct and run the actix server instance
 ///
@@ -13,7 +13,7 @@ pub async fn server(pool: Pool) -> std::io::Result<()> {
             .wrap(Cors::permissive())
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
-            .app_data(actix_web::web::Data::new(pool.clone()))
+            .app_data(actix_web::web::Data::new(AuthPool { pool: pool.clone() }))
             .configure(routes::routes)
     })
     .workers(CONFIG.workers);

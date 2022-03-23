@@ -1,7 +1,6 @@
 use crate::{
     api::{EmailSso, JwtToken},
     utils::{jwt, mail_sso::send_sso_mail},
-    Pool,
 };
 
 use actix_session::Session;
@@ -9,7 +8,7 @@ use actix_web::{web, HttpResponse};
 use lettre::message::Mailbox;
 use sproot::{
     errors::{AppError, AppErrorType},
-    models::{Customers, CustomersDTO},
+    models::{Customers, CustomersDTO, AuthPool},
 };
 use uuid::Uuid;
 
@@ -43,7 +42,7 @@ fn extract_email(wemail: EmailSso) -> Result<(String, Mailbox), AppError> {
 
 /// POST /api/sso (login)
 pub async fn handle_sso(
-    db: web::Data<Pool>,
+    db: web::Data<AuthPool>,
     session: Session,
     wemail: web::Json<EmailSso>,
 ) -> Result<HttpResponse, AppError> {
@@ -54,7 +53,7 @@ pub async fn handle_sso(
     web::block(move || {
         let (email, mailboxed) = extract_email(wemail.into_inner())?;
         // Get the customer_id from the email
-        let customer = Customers::get(&db.get()?, &email)?;
+        let customer = Customers::get(&db.pool.get()?, &email)?;
         // Create the JWT token
         let jwt = jwt::create_jwt(&customer.id.to_string())?;
         // Encode it in base64 for convenience
@@ -71,7 +70,7 @@ pub async fn handle_sso(
 
 /// POST /api/rsso (register)
 pub async fn handle_rsso(
-    db: web::Data<Pool>,
+    db: web::Data<AuthPool>,
     session: Session,
     wemail: web::Json<EmailSso>,
 ) -> Result<HttpResponse, AppError> {
@@ -82,7 +81,7 @@ pub async fn handle_rsso(
     web::block(move || {
         let (email, mailboxed) = extract_email(wemail.into_inner())?;
         // Create the user and generate a customer_id
-        let customer = CustomersDTO { email: &email }.ginsert(&db.get()?)?;
+        let customer = CustomersDTO { email: &email }.ginsert(&db.pool.get()?)?;
         // Create the JWT token
         let jwt = jwt::create_jwt(&customer.id.to_string())?;
         // Encode it in base64 for convenience
@@ -100,7 +99,7 @@ pub async fn handle_rsso(
 /// GET /api/csso
 /// Exchange the code from the callback for a CookieSession
 pub async fn handle_csso(
-    db: web::Data<Pool>,
+    db: web::Data<AuthPool>,
     session: Session,
     jwt_holder: web::Query<JwtToken>,
 ) -> Result<HttpResponse, AppError> {
@@ -121,7 +120,7 @@ pub async fn handle_csso(
         };
 
         // Check if the customer_id exists in the database
-        if !Customers::exists(&db.get()?, &Uuid::parse_str(&customer_id)?)? {
+        if !Customers::exists(&db.pool.get()?, &Uuid::parse_str(&customer_id)?)? {
             return Err(AppError {
                 message: "Bad id, not authorized".to_owned(),
                 error_type: AppErrorType::InvalidToken,

@@ -1,7 +1,7 @@
 use crate::{api, CONFIG};
 
 use actix_web::web;
-use sproot::get_session_middleware;
+use sproot::{get_session_middleware, check_sessions::CheckSessions};
 
 // Populate the ServiceConfig with all the route needed for the server
 pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -19,6 +19,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 .route("/ping", web::get().to(|| async { "pzpour" }))
                 .route("/sso", web::post().to(api::sso::handle_sso))
                 .route("/rsso", web::post().to(api::sso::handle_rsso))
-                .route("/csso", web::get().to(api::sso::handle_csso)),
+                .route("/csso", web::get().to(api::sso::handle_csso))
+                .wrap(CheckSessions),
         );
 }
