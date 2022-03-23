@@ -16,6 +16,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                     CONFIG.cookie_secret.as_bytes(),
                     "SP-CKS".to_string(),
                 ))
+                .route("/ping", web::get().to(|| async { "pzpour" }))
                 .route("/sso", web::post().to(api::sso::handle_sso))
                 .route("/rsso", web::post().to(api::sso::handle_rsso))
                 .route("/csso", web::get().to(api::sso::handle_csso)),
