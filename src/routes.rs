@@ -1,18 +1,10 @@
 use crate::{api, CONFIG};
 
-use actix_session::{storage::CookieSessionStore, CookieContentSecurity, SessionMiddleware};
 use actix_web::web;
+use sproot::get_session_middleware;
 
 // Populate the ServiceConfig with all the route needed for the server
 pub fn routes(cfg: &mut web::ServiceConfig) {
-    let cookie_session = SessionMiddleware::builder(
-        CookieSessionStore::default(),
-        actix_web::cookie::Key::from(CONFIG.cookie_secret.as_bytes()),
-    )
-    .cookie_name("SP-CKS".to_string())
-    .cookie_content_security(CookieContentSecurity::Signed)
-    .build();
-
     // The /ping is used only to get a status over the server
     cfg.route("/ping", web::get().to(|| async { "zpour" }))
         .route("/ping", web::head().to(|| async { "zpour" }))
@@ -20,7 +12,10 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
         .service(
             web::scope("/api")
                 .route("/key", web::patch().to(api::apikey::update_apikey))
-                .wrap(cookie_session)
+                .wrap(get_session_middleware(
+                    CONFIG.cookie_secret.as_bytes(),
+                    "SP-CKS".to_string(),
+                ))
                 .route("/sso", web::post().to(api::sso::handle_sso))
                 .route("/rsso", web::post().to(api::sso::handle_rsso))
                 .route("/csso", web::get().to(api::sso::handle_csso)),
