@@ -8,7 +8,6 @@ extern crate sproot;
 use crate::utils::config::Config;
 
 use clap::Parser;
-use clap_verbosity_flag::WarnLevel;
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use jsonwebtoken::{DecodingKey, EncodingKey};
 
@@ -29,7 +28,7 @@ struct Args {
     config_path: Option<String>,
 
     #[clap(flatten)]
-    verbose: clap_verbosity_flag::Verbosity<WarnLevel>,
+    verbose: clap_verbosity_flag::Verbosity,
 }
 
 // Lazy static of the Token from Config to use in validator
@@ -70,6 +69,7 @@ async fn main() -> std::io::Result<()> {
             args.verbose.log_level_filter(),
         )
         .filter_module("actix_web", args.verbose.log_level_filter())
+        .filter_module("sproot", args.verbose.log_level_filter())
         .init();
 
     flow_run::flow_run_start().await

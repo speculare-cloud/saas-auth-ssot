@@ -1,7 +1,7 @@
 use crate::{api, CONFIG};
 
 use actix_web::web;
-use sproot::{get_session_middleware, check_sessions::CheckSessions};
+use sproot::{check_sessions::CheckSessions, get_session_middleware};
 
 // Populate the ServiceConfig with all the route needed for the server
 pub fn routes(cfg: &mut web::ServiceConfig) {

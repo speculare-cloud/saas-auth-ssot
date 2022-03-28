@@ -8,7 +8,7 @@ use actix_web::{web, HttpResponse};
 use lettre::message::Mailbox;
 use sproot::{
     errors::{AppError, AppErrorType},
-    models::{Customers, CustomersDTO, AuthPool},
+    models::{AuthPool, Customers, CustomersDTO},
 };
 use uuid::Uuid;
 
