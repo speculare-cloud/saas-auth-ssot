@@ -1,10 +1,29 @@
 use super::Specific;
 
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{
+    web::{self, ReqData},
+    HttpRequest, HttpResponse,
+};
 use sproot::{
     errors::{AppError, AppErrorType},
-    models::{ApiKey, ApiKeyDTOUpdate, AuthPool},
+    models::{ApiKey, ApiKeyDTOUpdate, AuthPool, InnerUser},
 };
+
+/// POST /api/key
+///
+/// Create a new ApiKey for the currently logged user (inner_user).
+/// The resulting ApiKey is returned back via Json.
+/// We'll also do the check for the quota of the user here,
+/// depending on his plan, we'll allow him to create (or not)
+/// a new ApiKey.
+pub async fn post_apikey(
+    _request: HttpRequest,
+    _db: web::Data<AuthPool>,
+    _inner_user: ReqData<InnerUser>,
+) -> Result<HttpResponse, AppError> {
+    info!("Route POST /api/key");
+    todo!()
+}
 
 /// PATCH /api/key
 ///
@@ -49,4 +68,27 @@ pub async fn update_apikey(
     .await??;
 
     Ok(HttpResponse::Ok().finish())
+}
+
+/// DELETE /api/key
+///
+/// Delete an ApiKey with the key == SPTK.
+/// Check if the ApiKey matching the SPTK is owned by the
+/// the currently logged user (inner_user).
+pub async fn delete_apikey(
+    request: HttpRequest,
+    _db: web::Data<AuthPool>,
+    _inner_user: ReqData<InnerUser>,
+) -> Result<HttpResponse, AppError> {
+    info!("Route DELETE /api/key");
+
+    // Get the SPTK header, error if not found (400)
+    let _sptk = match request.headers().get("SPTK") {
+        Some(sptk) => sptk.to_owned(),
+        None => {
+            return Ok(HttpResponse::BadRequest().finish());
+        }
+    };
+
+    todo!()
 }
