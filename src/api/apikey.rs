@@ -7,6 +7,10 @@ use sproot::{
 };
 
 /// PATCH /api/key
+///
+/// This route update the host_uuid of the ApiKey entry
+/// with key == sptk if the host_uuid was previously None.
+/// The host_uuid is took from the Specific query params (?uuid=)
 pub async fn update_apikey(
     request: HttpRequest,
     db: web::Data<AuthPool>,

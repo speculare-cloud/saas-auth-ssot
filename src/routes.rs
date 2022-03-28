@@ -1,4 +1,7 @@
-use crate::{api, CONFIG};
+use crate::{
+    api::{apikey, sso},
+    CONFIG,
+};
 
 use actix_web::web;
 use sproot::{check_sessions::CheckSessions, get_session_middleware};
@@ -8,18 +11,16 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
     // The /ping is used only to get a status over the server
     cfg.route("/ping", web::get().to(|| async { "zpour" }))
         .route("/ping", web::head().to(|| async { "zpour" }))
-        // Bind the /api/* route
+        .service(web::resource("/api/key").route(web::patch().to(apikey::update_apikey)))
         .service(
             web::scope("/api")
-                .route("/key", web::patch().to(api::apikey::update_apikey))
+                .wrap(CheckSessions)
                 .wrap(get_session_middleware(
                     CONFIG.cookie_secret.as_bytes(),
                     "SP-CKS".to_string(),
                 ))
-                .route("/ping", web::get().to(|| async { "pzpour" }))
-                .route("/sso", web::post().to(api::sso::handle_sso))
-                .route("/rsso", web::post().to(api::sso::handle_rsso))
-                .route("/csso", web::get().to(api::sso::handle_csso))
-                .wrap(CheckSessions),
+                .route("/sso", web::post().to(sso::handle_sso))
+                .route("/rsso", web::post().to(sso::handle_rsso))
+                .route("/csso", web::get().to(sso::handle_csso)),
         );
 }
