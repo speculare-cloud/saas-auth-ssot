@@ -27,6 +27,6 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 .route("/rsso", web::post().to(sso::handle_rsso))
                 .route("/csso", web::get().to(sso::handle_csso))
                 .route("/key", web::post().to(apikey::post_apikey))
-                .route("/key", web::delete().to(apikey::delete_apikey)),
+                .route("/key/{key}", web::delete().to(apikey::delete_apikey)),
         );
 }
