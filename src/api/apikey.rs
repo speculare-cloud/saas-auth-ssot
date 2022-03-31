@@ -6,7 +6,7 @@ use actix_web::{
 };
 use sproot::{
     errors::{AppError, AppErrorType},
-    models::{ApiKey, ApiKeyDTOUpdate, AuthPool, InnerUser},
+    models::{ApiKey, ApiKeyDTO, AuthPool, InnerUser},
 };
 
 /// POST /api/key
@@ -17,11 +17,26 @@ use sproot::{
 /// depending on his plan, we'll allow him to create (or not)
 /// a new ApiKey.
 pub async fn post_apikey(
-    _db: web::Data<AuthPool>,
-    _inner_user: ReqData<InnerUser>,
+    db: web::Data<AuthPool>,
+    inner_user: ReqData<InnerUser>,
+    item: web::Json<ApiKeyDTO>,
 ) -> Result<HttpResponse, AppError> {
     info!("Route POST /api/key");
-    todo!()
+
+    // Assert that the item.customer_id is equals to inner_user
+    // -> asserting that he's creating a key for his account and not someone's else
+    if item.customer_id != Some(inner_user.into_inner().uuid) {
+        return Err(AppError {
+            message: "Wrong user UUID".to_owned(),
+            error_type: AppErrorType::InvalidRequest,
+        });
+    }
+
+    // TODO - Add check that the user can in fact create
+    //        the key (based on his plan subscriptions)
+    // Insert and get the inserted key back
+    let data = web::block(move || item.ginsert(&db.pool.get()?)).await??;
+    Ok(HttpResponse::Ok().json(data))
 }
 
 /// PATCH /api/key
@@ -37,13 +52,14 @@ pub async fn update_apikey(
     info!("Route PATCH /api/key/{{sptk}}");
 
     web::block(move || {
-        // Check if it's ok to update the key (based on sptk result host_uuid == None)
+        // Get the key which have the key == sptk
         let api_key = ApiKey::get_entry(&db.pool.get()?, &sptk)?;
 
-        // If the host_uuid is none, we update the value with the current host_uuid from header
-        // Otherwise it's an error as it's not authorized
+        // If the host_uuid of that key is none, we update the value with the
+        // current host_uuid from Specific otherwise it's an error as the user
+        // try to update a Key that doesn't belong to him.
         if api_key.host_uuid.is_none() {
-            ApiKeyDTOUpdate {
+            ApiKeyDTO {
                 host_uuid: Some(info.uuid.to_owned()),
                 ..Default::default()
             }
@@ -89,5 +105,6 @@ pub async fn delete_apikey(
     })
     .await??;
 
+    // Return the number of row affected (1 if went well, 0 otherwise)
     Ok(HttpResponse::Ok().body(res.to_string()))
 }
