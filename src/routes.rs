@@ -12,7 +12,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/ping", web::get().to(|| async { "zpour" }))
         .route("/ping", web::head().to(|| async { "zpour" }))
         .service(
-            web::resource("/api/key")
+            web::resource("/api/key/{key}")
                 .guard(guard::Patch())
                 .route(web::patch().to(apikey::update_apikey)),
         )
