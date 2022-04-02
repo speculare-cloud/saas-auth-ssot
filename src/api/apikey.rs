@@ -1,12 +1,12 @@
+use crate::api::{get_header_value, get_user_session};
+
 use super::Specific;
 
-use actix_web::{
-    web::{self, ReqData},
-    HttpResponse,
-};
+use actix_session::Session;
+use actix_web::{web, HttpRequest, HttpResponse};
 use sproot::{
     errors::{AppError, AppErrorType},
-    models::{ApiKey, ApiKeyDTO, AuthPool, InnerUser},
+    models::{ApiKey, ApiKeyDTO, AuthPool},
 };
 
 /// POST /api/key
@@ -18,14 +18,17 @@ use sproot::{
 /// a new ApiKey.
 pub async fn post_apikey(
     db: web::Data<AuthPool>,
-    inner_user: ReqData<InnerUser>,
+    session: Session,
     item: web::Json<ApiKeyDTO>,
 ) -> Result<HttpResponse, AppError> {
     info!("Route POST /api/key");
 
+    // Restrict to a logger user
+    let user_uuid = get_user_session(&session)?;
+
     // Assert that the item.customer_id is equals to inner_user
     // -> asserting that he's creating a key for his account and not someone's else
-    if item.customer_id != Some(inner_user.into_inner().uuid) {
+    if item.customer_id != Some(user_uuid) {
         return Err(AppError {
             message: "Wrong user UUID".to_owned(),
             error_type: AppErrorType::InvalidRequest,
@@ -45,15 +48,18 @@ pub async fn post_apikey(
 /// with key == sptk if the host_uuid was previously None.
 /// The host_uuid is took from the Specific query params (?uuid=)
 pub async fn update_apikey(
+    request: HttpRequest,
     db: web::Data<AuthPool>,
     info: web::Query<Specific>,
-    sptk: web::Path<String>,
 ) -> Result<HttpResponse, AppError> {
-    info!("Route PATCH /api/key/{{sptk}}");
+    info!("Route PATCH /api/key");
+
+    // Get the SPTK header, error if not found (400)
+    let sptk = get_header_value(&request, "SPTK")?;
 
     web::block(move || {
         // Get the key which have the key == sptk
-        let api_key = ApiKey::get_entry(&db.pool.get()?, &sptk)?;
+        let api_key = ApiKey::get_entry(&db.pool.get()?, sptk.to_str().unwrap())?;
 
         // If the host_uuid of that key is none, we update the value with the
         // current host_uuid from Specific otherwise it's an error as the user
@@ -83,19 +89,24 @@ pub async fn update_apikey(
 /// Check if the ApiKey matching the SPTK is owned by the
 /// the currently logged user (inner_user).
 pub async fn delete_apikey(
+    request: HttpRequest,
     db: web::Data<AuthPool>,
-    inner_user: ReqData<InnerUser>,
-    sptk: web::Path<String>,
+    session: Session,
 ) -> Result<HttpResponse, AppError> {
-    info!("Route DELETE /api/key/{{sptk}}");
+    info!("Route DELETE /api/key");
+
+    let sptk = get_header_value(&request, "SPTK")?;
+    let user_uuid = get_user_session(&session)?;
 
     let res = web::block(move || {
         let conn = &db.pool.get()?;
+        let sptk = sptk.to_str().unwrap();
+
         // Check if the entry exists for that user
-        let exists = ApiKey::entry_exists(conn, &inner_user.uuid, &sptk)?;
+        let exists = ApiKey::entry_exists(conn, &user_uuid, sptk)?;
 
         if exists {
-            Ok(ApiKey::delete_key(conn, &sptk)?)
+            Ok(ApiKey::delete_key(conn, sptk)?)
         } else {
             Err(AppError {
                 message: "Invalid SPTK token".to_owned(),

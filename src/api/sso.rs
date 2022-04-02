@@ -1,44 +1,15 @@
 use crate::{
-    api::{EmailSso, JwtToken},
+    api::{exit_if_logged, extract_mailbox, EmailSso, JwtToken},
     utils::{jwt, mail_sso::send_sso_mail},
 };
 
 use actix_session::Session;
 use actix_web::{web, HttpResponse};
-use lettre::message::Mailbox;
 use sproot::{
     errors::{AppError, AppErrorType},
     models::{AuthPool, Customers, CustomersDTO},
 };
 use uuid::Uuid;
-
-fn exit_if_logged(session: &Session) -> Result<(), AppError> {
-    // Check if the user is already "logged" (don't override a user_id)
-    if let Some(user_id) = session.get::<String>("user_id")? {
-        return Err(AppError {
-            message: format!("You're already logged as {}", user_id),
-            error_type: AppErrorType::InvalidRequest,
-        });
-    }
-
-    Ok(())
-}
-
-fn extract_email(wemail: EmailSso) -> Result<(String, Mailbox), AppError> {
-    // This act as a email verification (Regex is used)
-    let mailboxed: Mailbox = match wemail.email.parse() {
-        Ok(recv) => recv,
-        Err(e) => {
-            error!("Cannot convert {} into a Mailbox: {}", wemail.email, e);
-            return Err(AppError {
-                message: "Bad email address".to_owned(),
-                error_type: AppErrorType::InvalidRequest,
-            });
-        }
-    };
-
-    Ok((wemail.email, mailboxed))
-}
 
 /// POST /api/sso (login)
 pub async fn handle_sso(
@@ -51,7 +22,7 @@ pub async fn handle_sso(
     exit_if_logged(&session)?;
 
     web::block(move || {
-        let (email, mailboxed) = extract_email(wemail.into_inner())?;
+        let (email, mailboxed) = extract_mailbox(wemail.into_inner())?;
         // Get the customer_id from the email
         let customer = Customers::get(&db.pool.get()?, &email)?;
         // Create the JWT token
@@ -79,7 +50,7 @@ pub async fn handle_rsso(
     exit_if_logged(&session)?;
 
     web::block(move || {
-        let (email, mailboxed) = extract_email(wemail.into_inner())?;
+        let (email, mailboxed) = extract_mailbox(wemail.into_inner())?;
         // Create the user and generate a customer_id
         let customer = CustomersDTO { email: &email }.ginsert(&db.pool.get()?)?;
         // Create the JWT token
