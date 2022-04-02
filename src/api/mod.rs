@@ -23,6 +23,8 @@ pub struct Specific {
     pub uuid: String,
 }
 
+/// Return the HeaderValue of the header 'header_name'
+/// or return an AppError - InvalidRequest if not present
 pub fn get_header_value(req: &HttpRequest, header_name: &str) -> Result<HeaderValue, AppError> {
     match req.headers().get(header_name) {
         Some(sptk) => Ok(sptk.to_owned()),
@@ -33,16 +35,20 @@ pub fn get_header_value(req: &HttpRequest, header_name: &str) -> Result<HeaderVa
     }
 }
 
+/// Get the Uuid of the user from his Session or
+/// return an InvalidToken error if not found
 pub fn get_user_session(session: &Session) -> Result<Uuid, AppError> {
     match session.get::<String>("user_id") {
         Ok(Some(id)) => Ok(Uuid::parse_str(&id).unwrap()),
         _ => Err(AppError {
             message: "Missing user_id in the session".to_owned(),
-            error_type: AppErrorType::InvalidRequest,
+            error_type: AppErrorType::InvalidToken,
         }),
     }
 }
 
+/// Simply return an error if the user is already logged.
+/// Used to protect the login route (sso)
 pub fn exit_if_logged(session: &Session) -> Result<(), AppError> {
     // Check if the user is already "logged" (don't override a user_id)
     if let Some(user_id) = session.get::<String>("user_id")? {
@@ -55,6 +61,9 @@ pub fn exit_if_logged(session: &Session) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Return the plain text email and the Mailbox object
+/// from the EmailSso or return an error if the email
+/// is not correctly formatted.
 pub fn extract_mailbox(wemail: EmailSso) -> Result<(String, Mailbox), AppError> {
     // This act as a email verification (Regex is used)
     let mailboxed: Mailbox = match wemail.email.parse() {
