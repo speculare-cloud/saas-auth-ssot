@@ -65,7 +65,7 @@ async fn main() -> std::io::Result<()> {
     // Init logger
     env_logger::Builder::new()
         .filter_module(
-            &sproot::prog().map_or_else(|| "speculare_server".to_owned(), |f| f.replace('-', "_")),
+            &sproot::prog().map_or_else(|| "saas_auth_ssot".to_owned(), |f| f.replace('-', "_")),
             args.verbose.log_level_filter(),
         )
         .filter_module("actix_web", args.verbose.log_level_filter())

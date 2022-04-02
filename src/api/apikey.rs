@@ -21,7 +21,6 @@ pub async fn update_apikey(
 ) -> Result<HttpResponse, AppError> {
     info!("Route PATCH /api/key");
 
-    // Get the SPTK header, error if not found (400)
     let sptk = get_header_value(&request, "SPTK")?;
 
     web::block(move || {
@@ -64,7 +63,6 @@ pub async fn post_apikey(
 ) -> Result<HttpResponse, AppError> {
     info!("Route POST /api/key");
 
-    // Restrict to a logger user
     let user_uuid = get_user_session(&session)?;
 
     // Assert that the item.customer_id is equals to inner_user
