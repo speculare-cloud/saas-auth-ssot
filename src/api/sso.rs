@@ -11,7 +11,9 @@ use sproot::{
 };
 use uuid::Uuid;
 
-/// POST /api/sso (login)
+/// POST /api/sso
+///
+/// Login a customer (get a Magic Link Mail)
 pub async fn handle_sso(
     db: web::Data<AuthPool>,
     session: Session,
@@ -39,7 +41,10 @@ pub async fn handle_sso(
     Ok(HttpResponse::Ok().finish())
 }
 
-/// POST /api/rsso (register)
+/// POST /api/rsso
+///
+/// Create a new customer based on his email address
+/// and then get a Magic Link Mail
 pub async fn handle_rsso(
     db: web::Data<AuthPool>,
     session: Session,
@@ -51,7 +56,7 @@ pub async fn handle_rsso(
 
     web::block(move || {
         let (email, mailboxed) = extract_mailbox(wemail.into_inner())?;
-        // Create the user and generate a customer_id
+        // Create the user and generate a customer_id (auto in Postgres)
         let customer = CustomersDTO { email: &email }.ginsert(&db.pool.get()?)?;
         // Create the JWT token
         let jwt = jwt::create_jwt(&customer.id.to_string())?;
@@ -68,7 +73,9 @@ pub async fn handle_rsso(
 }
 
 /// GET /api/csso
+///
 /// Exchange the code from the callback for a CookieSession
+/// eg: http://xyz/api/csso?jwt=base64_jwttoken
 pub async fn handle_csso(
     db: web::Data<AuthPool>,
     session: Session,

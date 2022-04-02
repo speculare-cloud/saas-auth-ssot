@@ -9,39 +9,6 @@ use sproot::{
     models::{ApiKey, ApiKeyDTO, AuthPool},
 };
 
-/// POST /api/key
-///
-/// Create a new ApiKey for the currently logged user (inner_user).
-/// The resulting ApiKey is returned back via Json.
-/// We'll also do the check for the quota of the user here,
-/// depending on his plan, we'll allow him to create (or not)
-/// a new ApiKey.
-pub async fn post_apikey(
-    db: web::Data<AuthPool>,
-    session: Session,
-    item: web::Json<ApiKeyDTO>,
-) -> Result<HttpResponse, AppError> {
-    info!("Route POST /api/key");
-
-    // Restrict to a logger user
-    let user_uuid = get_user_session(&session)?;
-
-    // Assert that the item.customer_id is equals to inner_user
-    // -> asserting that he's creating a key for his account and not someone's else
-    if item.customer_id != Some(user_uuid) {
-        return Err(AppError {
-            message: "Wrong user UUID".to_owned(),
-            error_type: AppErrorType::InvalidRequest,
-        });
-    }
-
-    // TODO - Add check that the user can in fact create
-    //        the key (based on his plan subscriptions)
-    // Insert and get the inserted key back
-    let data = web::block(move || item.ginsert(&db.pool.get()?)).await??;
-    Ok(HttpResponse::Ok().json(data))
-}
-
 /// PATCH /api/key
 ///
 /// This route update the host_uuid of the ApiKey entry
@@ -83,15 +50,48 @@ pub async fn update_apikey(
     Ok(HttpResponse::Ok().finish())
 }
 
+/// POST /api/key
+///
+/// Create a new ApiKey for the currently logged user (inner_user).
+/// The resulting ApiKey is returned back via Json.
+/// We'll also do the check for the quota of the user here,
+/// depending on his plan, we'll allow him to create (or not)
+/// a new ApiKey.
+pub async fn post_apikey(
+    session: Session,
+    db: web::Data<AuthPool>,
+    item: web::Json<ApiKeyDTO>,
+) -> Result<HttpResponse, AppError> {
+    info!("Route POST /api/key");
+
+    // Restrict to a logger user
+    let user_uuid = get_user_session(&session)?;
+
+    // Assert that the item.customer_id is equals to inner_user
+    // -> asserting that he's creating a key for his account and not someone's else
+    if item.customer_id != Some(user_uuid) {
+        return Err(AppError {
+            message: "Wrong user UUID".to_owned(),
+            error_type: AppErrorType::InvalidRequest,
+        });
+    }
+
+    // TODO - Add check that the user can in fact create
+    //        the key (based on his plan subscriptions)
+    // Insert and get the inserted key back
+    let data = web::block(move || item.ginsert(&db.pool.get()?)).await??;
+    Ok(HttpResponse::Ok().json(data))
+}
+
 /// DELETE /api/key
 ///
 /// Delete an ApiKey with the key == SPTK.
 /// Check if the ApiKey matching the SPTK is owned by the
 /// the currently logged user (inner_user).
 pub async fn delete_apikey(
+    session: Session,
     request: HttpRequest,
     db: web::Data<AuthPool>,
-    session: Session,
 ) -> Result<HttpResponse, AppError> {
     info!("Route DELETE /api/key");
 
