@@ -116,7 +116,7 @@ pub async fn handle_csso(
 
 /// Simple route that check if the user is logged
 pub async fn handle_who(session: Session) -> Result<HttpResponse, AppError> {
-	info!("Route GET /api/whoami");
+    info!("Route GET /api/whoami");
 
     // If there's no user_id in the session, it's not logged
     if session.get::<String>("user_id")?.is_none() {
@@ -125,6 +125,15 @@ pub async fn handle_who(session: Session) -> Result<HttpResponse, AppError> {
             error_type: AppErrorType::InvalidToken,
         });
     }
+
+    Ok(HttpResponse::Ok().finish())
+}
+
+/// Clear the Session on client & server side
+pub async fn handle_logout(session: Session) -> Result<HttpResponse, AppError> {
+    info!("Route GET /api/logout");
+
+    session.purge();
 
     Ok(HttpResponse::Ok().finish())
 }
