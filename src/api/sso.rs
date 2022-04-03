@@ -113,3 +113,18 @@ pub async fn handle_csso(
     session.insert("user_id", customer_id)?;
     Ok(HttpResponse::Ok().finish())
 }
+
+/// Simple route that check if the user is logged
+pub async fn handle_who(session: Session) -> Result<HttpResponse, AppError> {
+	info!("Route GET /api/whoami");
+
+    // If there's no user_id in the session, it's not logged
+    if session.get::<String>("user_id")?.is_none() {
+        return Err(AppError {
+            message: "Bad id, not authorized".to_owned(),
+            error_type: AppErrorType::InvalidToken,
+        });
+    }
+
+    Ok(HttpResponse::Ok().finish())
+}
