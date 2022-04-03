@@ -25,7 +25,7 @@ pub struct Config {
     pub key_cert: Option<String>,
 
     pub cookie_secret: String,
-    pub cookie_domain: String,
+    pub cookie_domain: Option<String>,
 
     // AUTH SETTINGS
     pub sso_base_url: String,

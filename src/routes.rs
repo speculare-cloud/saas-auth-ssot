@@ -21,6 +21,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 .wrap(get_session_middleware(
                     CONFIG.cookie_secret.as_bytes(),
                     "SP-CKS".to_string(),
+                    CONFIG.cookie_domain.to_owned(),
                 ))
                 .route("/sso", web::post().to(sso::handle_sso))
                 .route("/rsso", web::post().to(sso::handle_rsso))
