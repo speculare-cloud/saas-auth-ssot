@@ -4,6 +4,7 @@ use super::Specific;
 
 use actix_session::Session;
 use actix_web::{web, HttpRequest, HttpResponse};
+use rand::{thread_rng, Rng};
 use sproot::{
     errors::{AppError, AppErrorType},
     models::{ApiKey, ApiKeyDTO, AuthPool},
@@ -59,25 +60,31 @@ pub async fn update_apikey(
 pub async fn post_apikey(
     session: Session,
     db: web::Data<AuthPool>,
-    item: web::Json<ApiKeyDTO>,
 ) -> Result<HttpResponse, AppError> {
     info!("Route POST /api/key");
 
     let user_uuid = get_user_session(&session)?;
 
-    // Assert that the item.customer_id is equals to inner_user
-    // -> asserting that he's creating a key for his account and not someone's else
-    if item.customer_id != Some(user_uuid) {
-        return Err(AppError {
-            message: "Wrong user UUID".to_owned(),
-            error_type: AppErrorType::InvalidRequest,
-        });
-    }
-
     // TODO - Add check that the user can in fact create
     //        the key (based on his plan subscriptions)
-    // Insert and get the inserted key back
-    let data = web::block(move || item.ginsert(&db.pool.get()?)).await??;
+    // Insert/get the inserted key
+    let data = web::block(move || {
+        let item: ApiKeyDTO = ApiKeyDTO {
+            key: Some(
+                thread_rng()
+                    .sample_iter(&rand::distributions::Alphanumeric)
+                    .take(16)
+                    .map(char::from)
+                    .collect(),
+            ),
+            host_uuid: None,
+            customer_id: Some(user_uuid),
+            berta: Some("B1".to_owned()),
+        };
+
+        item.ginsert(&db.pool.get()?)
+    })
+    .await??;
     Ok(HttpResponse::Ok().json(data))
 }
 
