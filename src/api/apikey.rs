@@ -67,13 +67,14 @@ pub async fn post_apikey(
 
     // TODO - Add check that the user can in fact create
     //        the key (based on his plan subscriptions)
+
     // Insert/get the inserted key
     let data = web::block(move || {
         let item: ApiKeyDTO = ApiKeyDTO {
             key: Some(
                 thread_rng()
                     .sample_iter(&rand::distributions::Alphanumeric)
-                    .take(16)
+                    .take(32)
                     .map(char::from)
                     .collect(),
             ),
