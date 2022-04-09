@@ -1,6 +1,7 @@
 use crate::CONFIG;
 
 use askama::Template;
+use chrono::Utc;
 use lettre::message::{Mailbox, MultiPart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::client::{Tls, TlsParameters};
@@ -66,7 +67,7 @@ fn send_mail(email_addr: Mailbox, template: String, jwt: &str) -> Result<(), App
         .from(CONFIG.smtp_email_sender.to_owned())
         // Receiver is the person who should get the email
         .to(email_addr)
-        .subject(String::from("Speculare - Passwordless Authentication."))
+        .subject(format!("Speculare - Authentication Requested at {} (utc)", Utc::now().format("%H:%M:%S")))
         .multipart(
             // Use multipart to have a fallback
         MultiPart::alternative()
