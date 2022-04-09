@@ -10,6 +10,24 @@ use sproot::{
     models::{ApiKey, ApiKeyDTO, AuthPool},
 };
 
+/// GET /api/key
+pub async fn get_apikey(
+    session: Session,
+    db: web::Data<AuthPool>,
+) -> Result<HttpResponse, AppError> {
+    info!("Route GET /api/key");
+
+    let user_uuid = get_user_session(&session)?;
+
+    let data = web::block(move || {
+        // Get the key which have the key == sptk
+        ApiKey::get_keys(&db.pool.get()?, &user_uuid)
+    })
+    .await??;
+
+    Ok(HttpResponse::Ok().json(data))
+}
+
 /// PATCH /api/key
 ///
 /// This route update the host_uuid of the ApiKey entry
@@ -86,6 +104,7 @@ pub async fn post_apikey(
         item.ginsert(&db.pool.get()?)
     })
     .await??;
+
     Ok(HttpResponse::Ok().json(data))
 }
 
