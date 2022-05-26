@@ -128,7 +128,7 @@ pub async fn delete_apikey(
         let sptk = sptk.to_str().unwrap();
 
         // Check if the entry exists for that user
-        let exists = ApiKey::entry_exists(conn, &user_uuid, sptk)?;
+        let exists = ApiKey::own_key(conn, &user_uuid, sptk)?;
 
         if exists {
             Ok(ApiKey::delete_key(conn, sptk)?)
