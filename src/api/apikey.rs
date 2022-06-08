@@ -13,19 +13,30 @@ use sproot::{
 /// GET /api/key
 pub async fn get_apikey(
     session: Session,
+    request: HttpRequest,
     db: web::Data<AuthPool>,
 ) -> Result<HttpResponse, AppError> {
     info!("Route GET /api/key");
 
     let user_uuid = get_user_session(&session)?;
 
-    let data = web::block(move || {
-        // Get the key which have the key == sptk
-        ApiKey::get_keys(&db.pool.get()?, &user_uuid)
-    })
-    .await??;
+    match get_header_value(&request, "SPTK") {
+        // If the header is defined, we get the specific key for the current user
+        Ok(sptk) => {
+            let data = web::block(move || {
+                ApiKey::get_key_owned(&db.pool.get()?, &user_uuid, sptk.to_str().unwrap())
+            })
+            .await??;
 
-    Ok(HttpResponse::Ok().json(data))
+            Ok(HttpResponse::Ok().json(data))
+        }
+        // Otherwise we get all the keys for that user
+        Err(_) => {
+            let data = web::block(move || ApiKey::get_keys(&db.pool.get()?, &user_uuid)).await??;
+
+            Ok(HttpResponse::Ok().json(data))
+        }
+    }
 }
 
 /// PATCH /api/key
