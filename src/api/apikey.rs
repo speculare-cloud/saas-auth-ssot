@@ -24,7 +24,7 @@ pub async fn get_apikey(
         // If the header is defined, we get the specific key for the current user
         Ok(sptk) => {
             let data = web::block(move || {
-                ApiKey::get_key_owned(&db.pool.get()?, &user_uuid, sptk.to_str().unwrap())
+                ApiKey::get_key_owned(&mut db.pool.get()?, &user_uuid, sptk.to_str().unwrap())
             })
             .await??;
 
@@ -32,7 +32,8 @@ pub async fn get_apikey(
         }
         // Otherwise we get all the keys for that user
         Err(_) => {
-            let data = web::block(move || ApiKey::get_keys(&db.pool.get()?, &user_uuid)).await??;
+            let data =
+                web::block(move || ApiKey::get_keys(&mut db.pool.get()?, &user_uuid)).await??;
 
             Ok(HttpResponse::Ok().json(data))
         }
@@ -55,7 +56,7 @@ pub async fn update_apikey(
 
     web::block(move || {
         // Get the key which have the key == sptk
-        let api_key = ApiKey::get_entry(&db.pool.get()?, sptk.to_str().unwrap())?;
+        let api_key = ApiKey::get_entry(&mut db.pool.get()?, sptk.to_str().unwrap())?;
 
         // If the host_uuid of that key is none, we update the value with the
         // current host_uuid from Specific otherwise it's an error as the user
@@ -65,7 +66,7 @@ pub async fn update_apikey(
                 host_uuid: Some(info.uuid.to_owned()),
                 ..Default::default()
             }
-            .update(&db.pool.get()?, api_key.id)?;
+            .update(&mut db.pool.get()?, api_key.id)?;
             Ok(())
         } else {
             Err(AppError {
@@ -112,7 +113,7 @@ pub async fn post_apikey(
             berta: Some("B1".to_owned()),
         };
 
-        item.ginsert(&db.pool.get()?)
+        item.ginsert(&mut db.pool.get()?)
     })
     .await??;
 
@@ -135,7 +136,7 @@ pub async fn delete_apikey(
     let user_uuid = get_user_session(&session)?;
 
     let res = web::block(move || {
-        let conn = &db.pool.get()?;
+        let conn = &mut db.pool.get()?;
         let sptk = sptk.to_str().unwrap();
 
         // Check if the entry exists for that user

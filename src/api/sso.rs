@@ -26,7 +26,7 @@ pub async fn handle_sso(
     web::block(move || {
         let (email, mailboxed) = extract_mailbox(wemail.into_inner())?;
         // Get the customer_id from the email
-        let customer = Customers::get(&db.pool.get()?, &email)?;
+        let customer = Customers::get(&mut db.pool.get()?, &email)?;
         // Create the JWT token
         let jwt = jwt::create_jwt(&customer.id.to_string())?;
         // Encode it in base64 for convenience
@@ -57,7 +57,7 @@ pub async fn handle_rsso(
     web::block(move || {
         let (email, mailboxed) = extract_mailbox(wemail.into_inner())?;
         // Create the user and generate a customer_id (auto in Postgres)
-        let customer = CustomersDTO { email: &email }.ginsert(&db.pool.get()?)?;
+        let customer = CustomersDTO { email: &email }.ginsert(&mut db.pool.get()?)?;
         // Create the JWT token
         let jwt = jwt::create_jwt(&customer.id.to_string())?;
         // Encode it in base64 for convenience
@@ -98,7 +98,7 @@ pub async fn handle_csso(
         };
 
         // Check if the customer_id exists in the database
-        if !Customers::exists(&db.pool.get()?, &Uuid::parse_str(&customer_id)?)? {
+        if !Customers::exists(&mut db.pool.get()?, &Uuid::parse_str(&customer_id)?)? {
             return Err(AppError {
                 message: "Bad id, not authorized".to_owned(),
                 error_type: AppErrorType::InvalidToken,

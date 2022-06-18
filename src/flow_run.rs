@@ -1,6 +1,7 @@
-use crate::{embedded_migrations, server, utils::mail_sso::test_smtp_transport, Pool, CONFIG};
+use crate::{server, utils::mail_sso::test_smtp_transport, Pool, CONFIG, MIGRATIONS};
 
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
+use diesel_migrations::MigrationHarness;
 
 fn build_pool(db_url: &str, max_conn: u32) -> Pool {
     // Check if the SMTP server host is "ok"
@@ -27,7 +28,8 @@ fn build_pool(db_url: &str, max_conn: u32) -> Pool {
 
 fn apply_migration(pool: &Pool) {
     // Get a connection from the R2D2 pool
-    let pooled_conn = match pool.get() {
+    let pconn = &mut pool.get();
+    let pooled_conn = match pconn {
         Ok(pooled) => pooled,
         Err(e) => {
             error!(
@@ -39,7 +41,7 @@ fn apply_migration(pool: &Pool) {
     };
 
     // Apply the migrations to the database
-    if let Err(e) = embedded_migrations::run(&pooled_conn) {
+    if let Err(e) = pooled_conn.run_pending_migrations(MIGRATIONS) {
         error!("Cannot apply the migrations: {}", e);
         std::process::exit(1);
     }

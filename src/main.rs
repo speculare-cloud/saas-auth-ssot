@@ -9,6 +9,7 @@ use crate::utils::config::Config;
 
 use clap::Parser;
 use diesel::{r2d2::ConnectionManager, PgConnection};
+use diesel_migrations::EmbeddedMigrations;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 
 mod api;
@@ -56,7 +57,7 @@ lazy_static::lazy_static! {
 }
 
 // Embed migrations into the binary
-embed_migrations!();
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
