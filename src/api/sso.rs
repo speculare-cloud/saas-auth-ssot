@@ -110,8 +110,8 @@ pub async fn handle_csso(
     .await??;
 
     // If everything is correct, return a Cookie with the user_id == customer_id
-    session.insert("user_id", customer_id)?;
-    Ok(HttpResponse::Ok().finish())
+    session.insert("user_id", customer_id.clone())?;
+    Ok(HttpResponse::Ok().body(customer_id))
 }
 
 /// Simple route that check if the user is logged
@@ -126,7 +126,7 @@ pub async fn handle_who(session: Session) -> Result<HttpResponse, AppError> {
         });
     }
 
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().body(session.get::<String>("user_id")?.unwrap()))
 }
 
 /// Clear the Session on client & server side
