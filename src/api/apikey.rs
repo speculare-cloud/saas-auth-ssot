@@ -6,7 +6,7 @@ use actix_session::Session;
 use actix_web::{web, HttpRequest, HttpResponse};
 use rand::{thread_rng, Rng};
 use sproot::{
-    errors::{AppError, AppErrorType},
+    apierrors::ApiError,
     models::{ApiKey, ApiKeyDTO, AuthPool},
 };
 
@@ -15,7 +15,7 @@ pub async fn get_apikey(
     session: Session,
     request: HttpRequest,
     db: web::Data<AuthPool>,
-) -> Result<HttpResponse, AppError> {
+) -> Result<HttpResponse, ApiError> {
     info!("Route GET /api/key");
 
     let user_uuid = get_user_session(&session)?;
@@ -49,7 +49,7 @@ pub async fn update_apikey(
     request: HttpRequest,
     db: web::Data<AuthPool>,
     info: web::Query<Specific>,
-) -> Result<HttpResponse, AppError> {
+) -> Result<HttpResponse, ApiError> {
     info!("Route PATCH /api/key");
 
     let sptk = get_header_value(&request, "SPTK")?;
@@ -69,10 +69,7 @@ pub async fn update_apikey(
             .update(&mut db.pool.get()?, api_key.id)?;
             Ok(())
         } else {
-            Err(AppError {
-                message: "Invalid JWT token, access denied".to_owned(),
-                error_type: AppErrorType::InvalidToken,
-            })
+            Err(ApiError::AuthorizationError(String::from("JWT invalid")))
         }
     })
     .await??;
@@ -90,7 +87,7 @@ pub async fn update_apikey(
 pub async fn post_apikey(
     session: Session,
     db: web::Data<AuthPool>,
-) -> Result<HttpResponse, AppError> {
+) -> Result<HttpResponse, ApiError> {
     info!("Route POST /api/key");
 
     let user_uuid = get_user_session(&session)?;
@@ -129,7 +126,7 @@ pub async fn delete_apikey(
     session: Session,
     request: HttpRequest,
     db: web::Data<AuthPool>,
-) -> Result<HttpResponse, AppError> {
+) -> Result<HttpResponse, ApiError> {
     info!("Route DELETE /api/key");
 
     let sptk = get_header_value(&request, "SPTK")?;
@@ -145,10 +142,7 @@ pub async fn delete_apikey(
         if exists {
             Ok(ApiKey::delete_key(conn, sptk)?)
         } else {
-            Err(AppError {
-                message: "Invalid SPTK token".to_owned(),
-                error_type: AppErrorType::NotFound,
-            })
+            Err(ApiError::AuthorizationError(String::from("SPTK invalid")))
         }
     })
     .await??;

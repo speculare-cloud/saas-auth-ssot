@@ -2,7 +2,7 @@ use actix_session::Session;
 use actix_web::{http::header::HeaderValue, HttpRequest};
 use lettre::message::Mailbox;
 use serde::{Deserialize, Serialize};
-use sproot::errors::{AppError, AppErrorType};
+use sproot::apierrors::ApiError;
 use uuid::Uuid;
 
 pub mod apikey;
@@ -24,56 +24,50 @@ pub struct Specific {
 }
 
 /// Return the HeaderValue of the header 'header_name'
-/// or return an AppError - InvalidRequest if not present
-pub fn get_header_value(req: &HttpRequest, header_name: &str) -> Result<HeaderValue, AppError> {
+/// or return an ApiError - InvalidRequest if not present
+pub fn get_header_value(req: &HttpRequest, header_name: &str) -> Result<HeaderValue, ApiError> {
     match req.headers().get(header_name) {
         Some(sptk) => Ok(sptk.to_owned()),
-        None => Err(AppError {
-            message: format!("No {} in the headers", header_name),
-            error_type: AppErrorType::InvalidRequest,
-        }),
+        None => Err(ApiError::InvalidRequestError(format!(
+            "header {} not found",
+            header_name
+        ))),
     }
 }
 
 /// Get the Uuid of the user from his Session or
 /// return an InvalidToken error if not found
-pub fn get_user_session(session: &Session) -> Result<Uuid, AppError> {
+pub fn get_user_session(session: &Session) -> Result<Uuid, ApiError> {
     match session.get::<String>("user_id") {
         Ok(Some(id)) => Ok(Uuid::parse_str(&id).unwrap()),
-        _ => Err(AppError {
-            message: "Missing user_id in the session".to_owned(),
-            error_type: AppErrorType::InvalidToken,
-        }),
+        _ => Err(ApiError::SessionError(String::from("user_id not found"))),
     }
 }
 
 /// Simply return an error if the user is already logged.
 /// Used to protect the login route (sso)
-pub fn exit_if_logged(session: &Session) -> Result<(), AppError> {
+pub fn exit_if_logged(session: &Session) -> Result<(), ApiError> {
     // Check if the user is already "logged" (don't override a user_id)
-    if let Some(user_id) = session.get::<String>("user_id")? {
-        return Err(AppError {
-            message: format!("You're already logged as {}", user_id),
-            error_type: AppErrorType::InvalidRequest,
-        });
+    if (session.get::<String>("user_id")?).is_some() {
+        Err(ApiError::InvalidRequestError(String::from(
+            "already logged",
+        )))
+    } else {
+        Ok(())
     }
-
-    Ok(())
 }
 
 /// Return the plain text email and the Mailbox object
 /// from the EmailSso or return an error if the email
 /// is not correctly formatted.
-pub fn extract_mailbox(wemail: EmailSso) -> Result<(String, Mailbox), AppError> {
+pub fn extract_mailbox(wemail: EmailSso) -> Result<(String, Mailbox), ApiError> {
     // This act as a email verification (Regex is used)
     let mailboxed: Mailbox = match wemail.email.parse() {
         Ok(recv) => recv,
-        Err(e) => {
-            error!("Cannot convert {} into a Mailbox: {}", wemail.email, e);
-            return Err(AppError {
-                message: "Bad email address".to_owned(),
-                error_type: AppErrorType::InvalidRequest,
-            });
+        Err(_) => {
+            return Err(ApiError::InvalidRequestError(String::from(
+                "email badly formatted",
+            )));
         }
     };
 

@@ -11,7 +11,7 @@ use lettre::{
     message::{header, SinglePart},
     Message, Transport,
 };
-use sproot::errors::{AppError, AppErrorType};
+use sproot::apierrors::ApiError;
 
 pub fn test_smtp_transport() {
     // Check if the SMTP server host is "ok"
@@ -51,15 +51,15 @@ lazy_static::lazy_static! {
     static ref MAILER: SmtpTransport = {
         match get_smtp_transport() {
             Ok(smtp) => smtp,
-            Err(e) => {
-                error!("MAILER: cannot get the smtp_transport: {}", e);
+            Err(err) => {
+                error!("MAILER: cannot get the smtp_transport: {}", err);
                 std::process::exit(1);
             }
         }
     };
 }
 
-fn send_mail(email_addr: Mailbox, template: String, jwt: &str) -> Result<(), AppError> {
+fn send_mail(email_addr: Mailbox, template: String, jwt: &str) -> Result<(), ApiError> {
     // Build the email with all params
     let email = Message::builder()
         // Sender is the email of the sender, which is used by the SMTP
@@ -92,10 +92,7 @@ fn send_mail(email_addr: Mailbox, template: String, jwt: &str) -> Result<(), App
         Ok(_) => Ok(()),
         Err(e) => {
             error!("Could not send email: {}", e);
-            Err(AppError {
-                message: format!("Error while sending verification email: {}", e),
-                error_type: AppErrorType::ServerError,
-            })
+            Err(ApiError::ServerError(String::from("cannot send email")))
         }
     }
 }
@@ -109,7 +106,7 @@ struct SsoTemplate<'a> {
 }
 
 /// Send an email alerting that a new incident was created.
-pub fn send_sso_mail(email: Mailbox, jwt: &str) -> Result<(), AppError> {
+pub fn send_sso_mail(email: Mailbox, jwt: &str) -> Result<(), ApiError> {
     // Build the SsoTemplate (html code)
     // The SsoTemplate struct is used to hold all the information
     // about the template, which values are needed, ...

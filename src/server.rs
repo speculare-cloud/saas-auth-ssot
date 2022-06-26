@@ -2,7 +2,7 @@ use crate::{routes, Pool, CONFIG};
 
 use actix_cors::Cors;
 use actix_web::{middleware, App, HttpServer};
-use sproot::{errors::AppError, models::AuthPool};
+use sproot::{apierrors::ApiError, models::AuthPool};
 
 /// Construct and run the actix server instance
 ///
