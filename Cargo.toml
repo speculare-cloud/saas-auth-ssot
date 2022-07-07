@@ -21,7 +21,7 @@ diesel_migrations = "2.0.0-rc.0"
 env_logger = "0.9"
 jsonwebtoken = "8.0"
 lazy_static = "1.4"
-lettre = { version = "0.10.0-rc.7", features = ["rustls-tls"] }
+lettre = { version = "0.10", features = ["rustls-tls"] }
 log = "0.4"
 rand = "0.8"
 r2d2 = "0.8"
