@@ -1,6 +1,5 @@
 use crate::CONFIG;
 
-use askama::Template;
 use chrono::Utc;
 use lettre::message::{Mailbox, MultiPart};
 use lettre::transport::smtp::authentication::Credentials;
@@ -11,6 +10,7 @@ use lettre::{
     message::{header, SinglePart},
     Message, Transport,
 };
+use sailfish::TemplateOnce;
 use sproot::apierrors::ApiError;
 
 pub fn test_smtp_transport() {
@@ -98,9 +98,9 @@ fn send_mail(email_addr: Mailbox, template: String, jwt: &str) -> Result<(), Api
 }
 
 /// Structure representing the incident template html sent by mail
-#[derive(Template)]
-#[template(path = "sso.html")]
-struct SsoTemplate<'a> {
+#[derive(TemplateOnce)]
+#[template(path = "sso.stpl")]
+struct SsoTemplate2<'a> {
     sso_base: &'a str,
     jwt: &'a str,
 }
@@ -110,11 +110,12 @@ pub fn send_sso_mail(email: Mailbox, jwt: &str) -> Result<(), ApiError> {
     // Build the SsoTemplate (html code)
     // The SsoTemplate struct is used to hold all the information
     // about the template, which values are needed, ...
-    let sso_template = SsoTemplate {
+    let sso_template = SsoTemplate2 {
         sso_base: &CONFIG.sso_base_url,
         jwt,
     }
-    .render()?;
+    .render_once()
+    .map_err(|e| ApiError::ServerError(e.to_string()))?;
 
     send_mail(email, sso_template, jwt)
 }
