@@ -90,9 +90,9 @@ fn send_mail(email_addr: Mailbox, template: String, jwt: &str) -> Result<(), Api
     // Send the email
     match MAILER.send(&email) {
         Ok(_) => Ok(()),
-        Err(e) => {
-            error!("Could not send email: {}", e);
-            Err(ApiError::ServerError(String::from("cannot send email")))
+        Err(err) => {
+            error!("Could not send email: {}", err);
+            Err(ApiError::ServerError(None))
         }
     }
 }
@@ -100,7 +100,7 @@ fn send_mail(email_addr: Mailbox, template: String, jwt: &str) -> Result<(), Api
 /// Structure representing the incident template html sent by mail
 #[derive(TemplateOnce)]
 #[template(path = "sso.stpl")]
-struct SsoTemplate2<'a> {
+struct SsoTemplate<'a> {
     sso_base: &'a str,
     jwt: &'a str,
 }
@@ -110,12 +110,15 @@ pub fn send_sso_mail(email: Mailbox, jwt: &str) -> Result<(), ApiError> {
     // Build the SsoTemplate (html code)
     // The SsoTemplate struct is used to hold all the information
     // about the template, which values are needed, ...
-    let sso_template = SsoTemplate2 {
+    let sso_template = SsoTemplate {
         sso_base: &CONFIG.sso_base_url,
         jwt,
     }
     .render_once()
-    .map_err(|e| ApiError::ServerError(e.to_string()))?;
+    .map_err(|err| {
+        error!("Could not build the email template: {}", err);
+        ApiError::ServerError(None)
+    })?;
 
     send_mail(email, sso_template, jwt)
 }

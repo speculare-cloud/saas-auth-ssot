@@ -69,7 +69,7 @@ pub async fn update_apikey(
             .update(&mut db.pool.get()?, api_key.id)?;
             Ok(())
         } else {
-            Err(ApiError::AuthorizationError(String::from("JWT invalid")))
+            Err(ApiError::AuthorizationError(None))
         }
     })
     .await??;
@@ -142,7 +142,7 @@ pub async fn delete_apikey(
         if exists {
             Ok(ApiKey::delete_key(conn, sptk)?)
         } else {
-            Err(ApiError::AuthorizationError(String::from("SPTK invalid")))
+            Err(ApiError::AuthorizationError(None))
         }
     })
     .await??;

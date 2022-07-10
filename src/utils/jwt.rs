@@ -15,9 +15,7 @@ pub fn create_jwt(customer_id: &str) -> Result<String, ApiError> {
     let expiration = match Utc::now().checked_add_signed(chrono::Duration::minutes(5)) {
         Some(time) => time.timestamp(),
         None => {
-            return Err(ApiError::ServerError(String::from(
-                "cannot build expiration time",
-            )));
+            return Err(ApiError::ServerError(None));
         }
     };
 
@@ -28,7 +26,7 @@ pub fn create_jwt(customer_id: &str) -> Result<String, ApiError> {
 
     encode(&Header::new(Algorithm::ES256), &claims, &JWT_ENCODINGKEY).map_err(|err| {
         trace!("jwt encode error: {}", err);
-        ApiError::ServerError(String::from("failed to encode your JWT"))
+        ApiError::ServerError(None)
     })
 }
 
@@ -36,7 +34,7 @@ pub fn decode_jwt(jwt: &str) -> Result<String, ApiError> {
     let decoded = decode::<Claims>(jwt, &JWT_DECODINGKEY, &Validation::new(Algorithm::ES256))
         .map_err(|err| {
             trace!("jwt decode error: {}", err);
-            ApiError::AuthorizationError(String::from("failed to decode the JWT"))
+            ApiError::AuthorizationError(None)
         })?;
 
     Ok(decoded.claims.sub)

@@ -89,12 +89,12 @@ pub async fn handle_csso(
         // Get the customer_id from the jwt token
         let customer_id = match base64::decode(&jwt_holder.jwt) {
             Ok(decoded) => jwt::decode_jwt(std::str::from_utf8(&decoded).unwrap())?,
-            Err(_) => return Err(ApiError::AuthorizationError(String::from("JWT invalid"))),
+            Err(_) => return Err(ApiError::AuthorizationError(None)),
         };
 
         // Check if the customer_id exists in the database
         if !Customers::exists(&mut db.pool.get()?, &Uuid::parse_str(&customer_id)?)? {
-            return Err(ApiError::AuthorizationError(String::from("bad user_id")));
+            return Err(ApiError::AuthorizationError(None));
         }
 
         Ok(customer_id)
@@ -112,7 +112,7 @@ pub async fn handle_who(session: Session) -> Result<HttpResponse, ApiError> {
 
     // If there's no user_id in the session, it's not logged
     if session.get::<String>("user_id")?.is_none() {
-        return Err(ApiError::AuthorizationError(String::from("bad user_id")));
+        return Err(ApiError::AuthorizationError(None));
     }
 
     Ok(HttpResponse::Ok().body(session.get::<String>("user_id")?.unwrap()))

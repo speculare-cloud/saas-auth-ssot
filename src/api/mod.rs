@@ -28,10 +28,7 @@ pub struct Specific {
 pub fn get_header_value(req: &HttpRequest, header_name: &str) -> Result<HeaderValue, ApiError> {
     match req.headers().get(header_name) {
         Some(sptk) => Ok(sptk.to_owned()),
-        None => Err(ApiError::InvalidRequestError(format!(
-            "header {} not found",
-            header_name
-        ))),
+        None => Err(ApiError::InvalidRequestError(None)),
     }
 }
 
@@ -40,7 +37,7 @@ pub fn get_header_value(req: &HttpRequest, header_name: &str) -> Result<HeaderVa
 pub fn get_user_session(session: &Session) -> Result<Uuid, ApiError> {
     match session.get::<String>("user_id") {
         Ok(Some(id)) => Ok(Uuid::parse_str(&id).unwrap()),
-        _ => Err(ApiError::SessionError(String::from("user_id not found"))),
+        _ => Err(ApiError::SessionError(None)),
     }
 }
 
@@ -49,9 +46,7 @@ pub fn get_user_session(session: &Session) -> Result<Uuid, ApiError> {
 pub fn exit_if_logged(session: &Session) -> Result<(), ApiError> {
     // Check if the user is already "logged" (don't override a user_id)
     if (session.get::<String>("user_id")?).is_some() {
-        Err(ApiError::InvalidRequestError(String::from(
-            "already logged",
-        )))
+        Err(ApiError::InvalidRequestError(None))
     } else {
         Ok(())
     }
@@ -65,9 +60,7 @@ pub fn extract_mailbox(wemail: EmailSso) -> Result<(String, Mailbox), ApiError> 
     let mailboxed: Mailbox = match wemail.email.parse() {
         Ok(recv) => recv,
         Err(_) => {
-            return Err(ApiError::InvalidRequestError(String::from(
-                "email badly formatted",
-            )));
+            return Err(ApiError::InvalidRequestError(None));
         }
     };
 
