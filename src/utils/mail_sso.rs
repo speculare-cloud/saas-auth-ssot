@@ -10,8 +10,19 @@ use lettre::{
     message::{header, SinglePart},
     Message, Transport,
 };
+use once_cell::sync::Lazy;
 use sailfish::TemplateOnce;
 use sproot::apierrors::ApiError;
+
+// Lazy static for SmtpTransport used to send mails
+// Build it using rustls and a pool of 16 items.
+static MAILER: Lazy<SmtpTransport> = Lazy::new(|| match get_smtp_transport() {
+    Ok(smtp) => smtp,
+    Err(err) => {
+        error!("MAILER: cannot get the smtp_transport: {}", err);
+        std::process::exit(1);
+    }
+});
 
 pub fn test_smtp_transport() {
     // Check if the SMTP server host is "ok"
@@ -43,20 +54,6 @@ fn get_smtp_transport() -> Result<SmtpTransport, lettre::transport::smtp::Error>
         .credentials(creds)
         .pool_config(PoolConfig::new().max_size(16))
         .build())
-}
-
-lazy_static::lazy_static! {
-    // Lazy static for SmtpTransport used to send mails
-    // Build it using rustls and a pool of 16 items.
-    static ref MAILER: SmtpTransport = {
-        match get_smtp_transport() {
-            Ok(smtp) => smtp,
-            Err(err) => {
-                error!("MAILER: cannot get the smtp_transport: {}", err);
-                std::process::exit(1);
-            }
-        }
-    };
 }
 
 fn send_mail(email_addr: Mailbox, template: String, jwt: &str) -> Result<(), ApiError> {
