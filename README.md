@@ -6,6 +6,7 @@
   <p>
 
 [![Apache 2 License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
+[![CI](https://github.com/speculare-cloud/saas-auth-ssot/workflows/CI/badge.svg)](https://github.com/speculare-cloud/saas-auth-ssot/actions)
 
   </p>
 </div>
@@ -18,6 +19,16 @@ The goal of `saas-auth-ssot` is to have a service (API + database) that other Sp
 - Generating API Key for a newly created host
 - Overall authorization/authentication across the service
 
+Server setup / Dev setup
+--------------------------
+
+- Install all build dependencies
+
+```bash
+$ sudo apt-get install cmake libssl-dev libpq-dev pkg-config build-essential
+```
+
+- Create a ssot.config file based on ssot.example.config
 
 Generating JWT EC Keys
 --------------------------
@@ -28,7 +39,4 @@ $ openssl ecparam -genkey -noout -name prime256v1 | openssl pkcs8 -topk8 -nocryp
 $ openssl ec -in ec-private.pem -pubout -out ec-public.pem
 ```
 
-Contributing
---------------------------
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+Don't forgot to specify the path for those prime256v1 keys in your ssot.config.
