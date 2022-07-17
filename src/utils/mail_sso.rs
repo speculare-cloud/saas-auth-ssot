@@ -1,5 +1,3 @@
-use crate::CONFIG;
-
 use chrono::Utc;
 use lettre::message::{Mailbox, MultiPart};
 use lettre::transport::smtp::authentication::Credentials;
@@ -13,6 +11,8 @@ use lettre::{
 use once_cell::sync::Lazy;
 use sailfish::TemplateOnce;
 use sproot::apierrors::ApiError;
+
+use crate::CONFIG;
 
 // Lazy static for SmtpTransport used to send mails
 // Build it using rustls and a pool of 16 items.

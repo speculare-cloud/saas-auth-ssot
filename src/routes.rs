@@ -1,10 +1,10 @@
+use actix_web::{guard, web};
+use sproot::get_session_middleware;
+
 use crate::{
     api::{apikey, sso},
     CONFIG,
 };
-
-use actix_web::{guard, web};
-use sproot::get_session_middleware;
 
 // Populate the ServiceConfig with all the route needed for the server
 pub fn routes(cfg: &mut web::ServiceConfig) {

@@ -5,14 +5,14 @@ extern crate log;
 #[macro_use]
 extern crate sproot;
 
-use crate::utils::config::Config;
-
 use clap::Parser;
 use diesel::{r2d2::ConnectionManager, PgConnection};
 use diesel_migrations::EmbeddedMigrations;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use once_cell::sync::Lazy;
 use sproot::prog;
+
+use crate::utils::config::Config;
 
 mod api;
 mod flow_run;

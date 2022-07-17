@@ -1,7 +1,7 @@
-use crate::{server, utils::mail_sso::test_smtp_transport, Pool, CONFIG, MIGRATIONS};
-
 use diesel::{prelude::PgConnection, r2d2::ConnectionManager};
 use diesel_migrations::MigrationHarness;
+
+use crate::{server, utils::mail_sso::test_smtp_transport, Pool, CONFIG, MIGRATIONS};
 
 fn build_pool(db_url: &str, max_conn: u32) -> Pool {
     // Check if the SMTP server host is "ok"

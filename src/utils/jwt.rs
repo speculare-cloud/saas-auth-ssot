@@ -1,9 +1,9 @@
-use crate::{JWT_DECODINGKEY, JWT_ENCODINGKEY};
-
 use chrono::Utc;
 use jsonwebtoken::{decode, encode, Algorithm, Header, Validation};
 use serde::{Deserialize, Serialize};
 use sproot::apierrors::ApiError;
+
+use crate::{JWT_DECODINGKEY, JWT_ENCODINGKEY};
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Claims {

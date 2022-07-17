@@ -1,15 +1,15 @@
-use crate::{
-    api::{exit_if_logged, extract_mailbox, EmailSso, JwtToken},
-    utils::{jwt, mail_sso::send_sso_mail},
-};
-
 use actix_session::Session;
 use actix_web::{web, HttpResponse};
 use sproot::{
     apierrors::ApiError,
-    models::{AuthPool, Customers, CustomersDTO},
+    models::{AuthPool, Customers, CustomersDTO, DtoBase},
 };
 use uuid::Uuid;
+
+use crate::{
+    api::{exit_if_logged, extract_mailbox, EmailSso, JwtToken},
+    utils::{jwt, mail_sso::send_sso_mail},
+};
 
 /// POST /api/sso
 ///
@@ -26,7 +26,7 @@ pub async fn handle_sso(
     web::block(move || {
         let (email, mailboxed) = extract_mailbox(wemail.into_inner())?;
         // Get the customer_id from the email
-        let customer = Customers::get(&mut db.pool.get()?, &email)?;
+        let customer = Customers::get_specific(&mut db.pool.get()?, &email)?;
         // Create the JWT token
         let jwt = jwt::create_jwt(&customer.id.to_string())?;
         // Encode it in base64 for convenience
@@ -57,7 +57,8 @@ pub async fn handle_rsso(
     web::block(move || {
         let (email, mailboxed) = extract_mailbox(wemail.into_inner())?;
         // Create the user and generate a customer_id (auto in Postgres)
-        let customer = CustomersDTO { email: &email }.ginsert(&mut db.pool.get()?)?;
+        let customer =
+            Customers::insert_and_get(&mut db.pool.get()?, &CustomersDTO { email: &email })?;
         // Create the JWT token
         let jwt = jwt::create_jwt(&customer.id.to_string())?;
         // Encode it in base64 for convenience
