@@ -15,8 +15,8 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "3.2", features = ["derive"] }
 clap-verbosity-flag = "1.0"
 config = "0.13"
-diesel = { version = "2.0.0-rc.0", features = ["postgres", "r2d2", "chrono"] }
-diesel_migrations = "2.0.0-rc.0"
+diesel = { version = "2.0.0-rc.1", features = ["postgres", "r2d2", "chrono"] }
+diesel_migrations = "2.0.0-rc.1"
 jsonwebtoken = "8.1"
 lettre = { version = "0.10", features = ["rustls-tls"] }
 log = "0.4"
