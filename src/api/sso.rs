@@ -1,5 +1,6 @@
 use actix_session::Session;
 use actix_web::{web, HttpResponse};
+use base64::Engine;
 use sproot::{
     apierrors::ApiError,
     models::{AuthPool, Customers, CustomersDTO, DtoBase},
@@ -30,7 +31,7 @@ pub async fn handle_sso(
         // Create the JWT token
         let jwt = jwt::create_jwt(&customer.id.to_string())?;
         // Encode it in base64 for convenience
-        let encoded = base64::encode(jwt);
+        let encoded = base64::prelude::BASE64_STANDARD.encode(jwt);
         // Send the mail for the JWT token
         // at first, send it immediately, but then we can consider
         // creating a Queue for the mails to be sent (avoid limit, ...)
@@ -62,7 +63,7 @@ pub async fn handle_rsso(
         // Create the JWT token
         let jwt = jwt::create_jwt(&customer.id.to_string())?;
         // Encode it in base64 for convenience
-        let encoded = base64::encode(jwt);
+        let encoded = base64::prelude::BASE64_STANDARD.encode(jwt);
         // Send the mail for the JWT token
         // at first, send it immediately, but then we can consider
         // creating a Queue for the mails to be sent (avoid limit, ...)
@@ -88,7 +89,7 @@ pub async fn handle_csso(
 
     let customer_id = web::block(move || {
         // Get the customer_id from the jwt token
-        let customer_id = match base64::decode(&jwt_holder.jwt) {
+        let customer_id = match base64::prelude::BASE64_STANDARD.decode(&jwt_holder.jwt) {
             Ok(decoded) => jwt::decode_jwt(std::str::from_utf8(&decoded).unwrap())?,
             Err(_) => return Err(ApiError::AuthorizationError(None)),
         };
