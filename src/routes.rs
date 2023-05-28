@@ -29,6 +29,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 .route("/whoami", web::get().to(sso::handle_who))
                 .route("/logout", web::get().to(sso::handle_logout))
                 .route("/key", web::get().to(apikey::get_apikey))
+                .route("/key/list", web::get().to(apikey::get_apikeys))
                 .route("/key", web::post().to(apikey::post_apikey))
                 .route("/key", web::delete().to(apikey::delete_apikey)),
         );

@@ -23,6 +23,11 @@ pub struct Specific {
     pub uuid: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SpecificKey {
+    pub id: i64,
+}
+
 /// Return the HeaderValue of the header 'header_name'
 /// or return an ApiError - InvalidRequest if not present
 pub fn get_header_value(req: &HttpRequest, header_name: &str) -> Result<HeaderValue, ApiError> {

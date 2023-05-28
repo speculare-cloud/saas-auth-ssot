@@ -6,42 +6,39 @@ use sproot::{
     models::{ApiKey, ApiKeyDTO, AuthPool, BaseCrud, DtoBase},
 };
 
-use super::Specific;
+use super::{Specific, SpecificKey};
 use crate::api::{get_header_value, get_user_session};
 
-/// GET /api/key
+/// GET /api/key?id
 pub async fn get_apikey(
     session: Session,
-    request: HttpRequest,
     db: web::Data<AuthPool>,
+    info: web::Query<SpecificKey>,
 ) -> Result<HttpResponse, ApiError> {
     info!("Route GET /api/key");
 
     let user_uuid = get_user_session(&session)?;
 
-    match get_header_value(&request, "SPTK") {
-        // If the header is defined, we get the specific key for the current user
-        Ok(sptk) => {
-            let data = web::block(move || {
-                ApiKey::get_by_key_and_owner(
-                    &mut db.pool.get()?,
-                    &user_uuid,
-                    sptk.to_str().unwrap(),
-                )
-            })
-            .await??;
+    let data = web::block(move || {
+        ApiKey::get_by_keyid_and_owner(&mut db.pool.get()?, &user_uuid, info.id)
+    })
+    .await??;
 
-            Ok(HttpResponse::Ok().json(data))
-        }
-        // Otherwise we get all the keys for that user
-        Err(_) => {
-            // TODO - Hardcoded to 100 keys max for now
-            let data =
-                web::block(move || ApiKey::get(&mut db.pool.get()?, &user_uuid, 100, 0)).await??;
+    Ok(HttpResponse::Ok().json(data))
+}
 
-            Ok(HttpResponse::Ok().json(data))
-        }
-    }
+/// GET /api/key/list
+pub async fn get_apikeys(
+    session: Session,
+    db: web::Data<AuthPool>,
+) -> Result<HttpResponse, ApiError> {
+    info!("Route GET /api/key/list");
+
+    let user_uuid = get_user_session(&session)?;
+
+    let data = web::block(move || ApiKey::get(&mut db.pool.get()?, &user_uuid, 100, 0)).await??;
+
+    Ok(HttpResponse::Ok().json(data))
 }
 
 /// PATCH /api/key
@@ -57,9 +54,6 @@ pub async fn update_apikey(
     info!("Route PATCH /api/key");
 
     let sptk = get_header_value(&request, "SPTK")?;
-
-    // TODO - Add check that the user can in fact update this key
-    //		  did this key belong to him?
 
     web::block(move || {
         // Get the key which have the key == sptk
@@ -120,6 +114,7 @@ pub async fn post_apikey(
                 ),
                 host_uuid: None,
                 customer_id: Some(user_uuid),
+                // TODO - Make the berta selection based on occupation
                 berta: Some("B1".to_owned()),
             },
         )
